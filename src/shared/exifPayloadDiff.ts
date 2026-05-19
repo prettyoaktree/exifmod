@@ -4,7 +4,7 @@
  * Used by renderer UI and by catalog preset ↔ file matching.
  */
 
-import { formatCopyrightForExif, withCopyrightAsWrittenToExif } from './copyrightFormat.js'
+import { formatCopyrightForExif, prepareWritePayloadForExif, withCopyrightAsWrittenToExif } from './copyrightFormat.js'
 import { authorIdentityFromMetadata } from './authorIdentity.js'
 import { parseExposureTimeToSeconds } from './exifDisplayFormat.js'
 import { fitKeywordsForExif } from './exifLimits.js'
@@ -248,6 +248,7 @@ function tagMatches(key: string, proposed: unknown, meta: Record<string, unknown
     case 'Model':
     case 'LensMake':
     case 'LensModel':
+    case 'LensID':
       return stringFieldMatches(key, proposed, meta)
     case 'Artist':
       return artistTagMatches(proposed, meta)
@@ -316,7 +317,11 @@ export function presetPayloadSatisfiedByFileMetadata(
   if (category === 'film') {
     prepared = normalizeFilmPresetPayloadForMerge({ ...stripped })
   }
-  const preview = withCopyrightAsWrittenToExif(prepared)
+  /** Catalog match compares stored preset tags only; derived `LensID` is not required on file when `LensModel` matches. */
+  const preview =
+    category === 'camera' || category === 'lens'
+      ? (withCopyrightAsWrittenToExif(prepared) ?? {})
+      : prepareWritePayloadForExif(prepared)
   if (category === 'film') {
     const copy = { ...preview }
     const rawKw = copy['Keywords']
@@ -427,6 +432,7 @@ export function diffToAttributeHighlights(diff: Record<string, unknown>): DiffAt
         h.Author = true
         break
       case 'LensModel':
+      case 'LensID':
       case 'Lens':
       case 'LensMake':
       case 'FocalLength':

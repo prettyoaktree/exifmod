@@ -11,7 +11,7 @@ import {
 import { createPortal } from 'react-dom'
 import { anyStagedClear, mergeRemoveTriState, type RemoveTriState } from './metaRemoveTriState.js'
 import { useTranslation } from 'react-i18next'
-import { withCopyrightAsWrittenToExif } from '@shared/copyrightFormat.js'
+import { prepareWritePayloadForExif } from '@shared/copyrightFormat.js'
 import { applyCategoryClears } from '@shared/exifClearTags.js'
 import {
   buildMergedKeywordsForWrite,
@@ -1212,7 +1212,7 @@ export function App(): React.ReactElement {
       if (!st) continue
       const { payload, err } = await buildMergedPayloadForState(st, path)
       if (err || !payload || Object.keys(payload).length === 0) continue
-      const previewPayload = withCopyrightAsWrittenToExif(payload)
+      const previewPayload = prepareWritePayloadForExif(payload)
       const meta = metadataByPath[pathKey(path)] ?? {}
       const diff = diffWritePayloadFromMetadata(previewPayload, meta)
       if (Object.keys(diff).length > 0) return true
@@ -1261,7 +1261,7 @@ export function App(): React.ReactElement {
           const pk = pathKey(path)
           const { payload, err } = await buildMergedPayloadForState(st, path)
           if (cancelled) return
-          const previewPayload = withCopyrightAsWrittenToExif(payload)
+          const previewPayload = prepareWritePayloadForExif(payload)
           if (err || !previewPayload || Object.keys(previewPayload).length === 0) {
             nextDiff[pk] = {}
             continue
@@ -2002,7 +2002,7 @@ export function App(): React.ReactElement {
         return
       }
       if (!payload || Object.keys(payload).length === 0) continue
-      const previewPayload = withCopyrightAsWrittenToExif(payload)
+      const previewPayload = prepareWritePayloadForExif(payload)
       const meta = metadataByPath[pathKey(path)] ?? {}
       if (Object.keys(diffWritePayloadFromMetadata(previewPayload, meta)).length === 0) continue
       todo.push({ path, payload })

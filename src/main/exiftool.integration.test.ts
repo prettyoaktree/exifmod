@@ -120,6 +120,7 @@ describe('exiftool integration (fixture: test/test_image.jpg)', () => {
       expect(sanitized['Film Maker']).toBeUndefined()
       expect(Object.keys(sanitized)).not.toContain('Film')
       expect(Object.keys(sanitized)).not.toContain('Film Maker')
+      expect(sanitized.LensID).toBe(sanitized.LensModel)
 
       workDir = mkdtempSync(join(tmpdir(), 'exifmod-exiftool-'))
       const copyPath = join(workDir, 'work.jpg')
@@ -132,7 +133,9 @@ describe('exiftool integration (fixture: test/test_image.jpg)', () => {
 
       const after = await readExifMetadata(tool, copyPath)
 
-      assertMetadataMatchesRead(after, sanitized)
+      expect(cmd.some((a) => a === '-LensID=CAT-35-14-A')).toBe(true)
+      const { LensID: _derivedLensId, ...sanitizedForReadback } = sanitized
+      assertMetadataMatchesRead(after, sanitizedForReadback)
 
       expect(after.Film).toBeUndefined()
       expect((after as Record<string, unknown>)['Film Maker']).toBeUndefined()

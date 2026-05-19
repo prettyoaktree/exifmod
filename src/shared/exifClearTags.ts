@@ -4,7 +4,7 @@
  */
 
 export const CLEAR_CAMERA_TAGS = ['Make', 'Model'] as const
-export const CLEAR_LENS_TAGS = ['LensModel', 'LensMake', 'Lens'] as const
+export const CLEAR_LENS_TAGS = ['LensModel', 'LensMake', 'Lens', 'LensID'] as const
 export const CLEAR_AUTHOR_TAGS = ['Artist', 'Creator', 'Copyright', 'Author'] as const
 export const CLEAR_SHUTTER_TAGS = ['ExposureTime', 'ShutterSpeedValue'] as const
 export const CLEAR_APERTURE_TAGS = ['FNumber', 'ApertureValue'] as const

@@ -12,7 +12,7 @@ User-facing behavior is covered in the [user guide (website)](https://prettyoakt
 
 Implementation references:
 
-- Merge and sanitization: `src/main/exifCore/store.ts` (`mergeSelectedPayloads` strips `Film` / `Film Maker` only; **film preset** payloads are passed through `normalizeFilmPresetPayloadForMerge` from `src/shared/filmKeywords.ts` so merged `Keywords` always use the canonical `… Film Stock` token when a stock is inferable—matching Preset Editor save behavior even for legacy DB rows), `src/main/exifCore/pure.ts` (`sanitizeWritePayload` at ExifTool apply, `buildApplyCommand`), `src/shared/exifClearTags.ts` (tag lists for the metadata **Remove** row per category)
+- Merge and sanitization: `src/main/exifCore/store.ts` (`mergeSelectedPayloads` strips `Film` / `Film Maker` only; **film preset** payloads are passed through `normalizeFilmPresetPayloadForMerge` from `src/shared/filmKeywords.ts` so merged `Keywords` always use the canonical `… Film Stock` token when a stock is inferable—matching Preset Editor save behavior even for legacy DB rows), `src/main/exifCore/pure.ts` (`sanitizeWritePayload` at ExifTool apply, `buildApplyCommand`), `src/shared/lensWriteTags.ts` (`syncLensIdFromLensModel`), `src/shared/copyrightFormat.ts` (`prepareWritePayloadForExif` for preview/diff), `src/shared/exifClearTags.ts` (tag lists for the metadata **Remove** row per category)
 - Constants: `src/main/exifCore/constants.ts` (re-exports limits from `src/shared/exifLimits.ts`: `IMAGEDESCRIPTION_MAX_UTF8_BYTES`, keyword caps)
 - Main grid / commit: `src/renderer/src/App.tsx` (`buildMergedPayloadForState`, metadata table, Notes + Keywords fields, shutter/aperture)
 - Shared EXIF limits + merge helpers: `src/shared/exifLimits.ts` (UTF‑8 clamps, `mergeImageDescriptionAppend`, `fitKeywordsForExif`, `remainingUtf8BytesForAiDescription`), `src/shared/filmKeywords.ts` (`buildMergedKeywordsForWrite`, `mergeKeywordsDeduped`, `Film Stock` suffix helpers)
@@ -46,7 +46,7 @@ These are the fields the **New / Edit preset** dialogs edit (`PresetEditor.tsx`)
 | `Make`              | ✓                                                |      |           |        | Camera body make                                                                                                                                                                                              |
 | `Model`             | ✓                                                |      |           |        | Camera body model                                                                                                                                                                                             |
 | `LensMake`          | ✓ (fixed lens only)                              | ✓    |           |        | UI: “Lens Make” (legacy `Lens` in old presets is migrated to `LensMake` on load)                                                                                                                              |
-| `LensModel`         | ✓ (fixed lens only)                              | ✓    |           |        | UI: “Lens Model”; legacy `LensID` in old presets is migrated to `LensModel` on load when model was empty                                                                                                      |
+| `LensModel`         | ✓ (fixed lens only)                              | ✓    |           |        | UI: “Lens Model”; legacy `LensID` in old preset JSON is migrated to `LensModel` on load when model was empty. On **write**, **`LensID`** is derived from **`LensModel`** (not stored in preset JSON; see [Derived tags at write](#derived-tags-at-write)) |
 | `ExposureTime`      | ✓ (only when **Fixed shutter speed** is enabled) |      |           |        | Written from the camera preset when the **`fixed_shutter`** DB flag is set; not inferred from tag presence alone                                                                                              |
 | `FNumber`           | ✓ (only when **Fixed aperture** is enabled)      |      |           |        | Written from the camera preset when the **`fixed_aperture`** DB flag is set                                                                                                                                   |
 | `ISO`               |                                                  |      | ✓         |        | Shown as **ISO** in the Film preset dialog                                                                                                                                                                    |
@@ -71,6 +71,16 @@ These are the fields the **New / Edit preset** dialogs edit (`PresetEditor.tsx`)
 **Preset Editor validation:** Before save, the dialog enforces minimum fields so each preset maps to concrete EXIF / catalog semantics: non-empty **preset name** (all categories); **Make** and **Model** for Camera; **lens mount** for interchangeable Camera; **LensMake** and **LensModel** for Lens presets; **film stock** display (derived like `filmStockDisplayFromKeywordsPayload`) for Film; **Author name** (Artist/Creator) for Author. Fixed-lens Camera presets do not require lens make/model. ISO (Film) and Copyright (Author) remain optional. See `src/renderer/src/presetEditorValidation.ts`.
 
 Lens presets **no longer** save `ExposureTime` or `FNumber` in the editor; any legacy values are stripped when saving or loading a Lens preset (`PresetEditor.tsx`).
+
+### Derived tags at write
+
+Some EXIF tags are **not** stored in preset JSON but are added when building the payload for **Preview EXIF changes** and ExifTool apply:
+
+| Tag       | Source | Implementation |
+| --------- | ------ | -------------- |
+| `LensID`  | Same string as merged **`LensModel`** when that key is in the write payload; cleared when **`LensModel`** is empty (e.g. Lens **Remove**) | `syncLensIdFromLensModel` in `src/shared/lensWriteTags.ts`; applied in `sanitizeWritePayload` (`src/main/exifCore/pure.ts`) and `prepareWritePayloadForExif` (`src/shared/copyrightFormat.ts`) |
+
+If **`LensModel`** is not in the write payload at all, **`LensID`** is left unchanged on the file.
 
 ### Author preset dialog (order)
 
@@ -173,7 +183,7 @@ Errors on one file do not abort the batch; after the run, a dialog can list fail
 
 Empty shutter/aperture fields mean **do not write** those tags (unless the **Remove** checkbox is checked for that row, which writes empty assignments to clear them). An empty **Description** field means **no manual write** for ImageDescription (unless **Remove** is checked). For **Keywords**, the New field is seeded with **descriptive-only** tokens (film markers stripped for display); an empty New field still participates in the merge by inheriting on-file descriptives as described in the table above, unless **Remove Keywords** is checked.
 
-Each row’s **Remove** (clear-on-write) applies last in the merge so it overrides preset merge for those tags: Camera (`Make`, `Model`), Lens (`LensModel`, `LensMake`, `Lens`), Film (**ISO** + strip film identity from merged keywords via `stripFilmIdentityFromKeywords` in `src/shared/filmKeywords.ts`; if no keywords remain, all **Keywords** are cleared), Author (`Artist`, `Creator`, `Copyright`, `Author`), shutter (`ExposureTime`, `ShutterSpeedValue`), aperture (`FNumber`, `ApertureValue`), Description (`ImageDescription`), Keywords (full clear). **Copyright** delete uses an explicit empty payload value preserved through `sanitizeWritePayload` so ExifTool receives `-Copyright=`.
+Each row’s **Remove** (clear-on-write) applies last in the merge so it overrides preset merge for those tags: Camera (`Make`, `Model`), Lens (`LensModel`, `LensMake`, `Lens`, `LensID`), Film (**ISO** + strip film identity from merged keywords via `stripFilmIdentityFromKeywords` in `src/shared/filmKeywords.ts`; if no keywords remain, all **Keywords** are cleared), Author (`Artist`, `Creator`, `Copyright`, `Author`), shutter (`ExposureTime`, `ShutterSpeedValue`), aperture (`FNumber`, `ApertureValue`), Description (`ImageDescription`), Keywords (full clear). **Copyright** delete uses an explicit empty payload value preserved through `sanitizeWritePayload` so ExifTool receives `-Copyright=`. Lens **Remove** also clears derived **`LensID`** via the empty **`LensModel`** in the merged payload.
 
 ---
 

@@ -1,3 +1,5 @@
+import { syncLensIdFromLensModel } from './lensWriteTags.js'
+
 /** Already in our `© {year} …` form (or user pasted full notice) — do not prefix again. */
 const COPYRIGHT_YEAR_PREFIX = /^©\s*\d{4}\s+/
 
@@ -27,4 +29,10 @@ export function withCopyrightAsWrittenToExif(payload: Record<string, unknown> | 
   if (formatted === null) delete out['Copyright']
   else out['Copyright'] = formatted
   return out
+}
+
+/** Preview / catalog-match shape: Copyright formatting + derived `LensID` from `LensModel`. */
+export function prepareWritePayloadForExif(payload: Record<string, unknown> | null): Record<string, unknown> {
+  const withCopyright = withCopyrightAsWrittenToExif(payload)
+  return syncLensIdFromLensModel(withCopyright ?? {})
 }

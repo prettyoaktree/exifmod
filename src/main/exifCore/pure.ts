@@ -6,6 +6,7 @@ import {
 import { sidecarXmpPath } from './imagePaths.js'
 import { clampUtf8ByBytes, utf8ByteLength } from '../../shared/exifLimits.js'
 import { formatCopyrightForExif } from '../../shared/copyrightFormat.js'
+import { syncLensIdFromLensModel } from '../../shared/lensWriteTags.js'
 import type { CameraMetadata, ConfigCatalog, LensMetadata } from '../../shared/types.js'
 
 export { clampUtf8ByBytes, utf8ByteLength }
@@ -32,7 +33,7 @@ export function sanitizeWritePayload(payload: Record<string, unknown>): Record<s
       else out['Copyright'] = formatted
     }
   }
-  return out
+  return syncLensIdFromLensModel(out)
 }
 
 export function validateImageDescriptionForExif(text: string): string | null {

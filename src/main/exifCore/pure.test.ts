@@ -30,6 +30,17 @@ describe('sanitizeWritePayload', () => {
     const already = `© ${y} EXIFmod. All rights reserved.`
     expect(sanitizeWritePayload({ Copyright: already })).toEqual({ Copyright: already })
   })
+
+  it('mirrors LensModel to LensID', () => {
+    expect(sanitizeWritePayload({ LensModel: 'CAT-35-14-A' })).toEqual({
+      LensModel: 'CAT-35-14-A',
+      LensID: 'CAT-35-14-A'
+    })
+  })
+
+  it('clears LensID when LensModel is empty', () => {
+    expect(sanitizeWritePayload({ LensModel: '' })).toEqual({ LensModel: '', LensID: '' })
+  })
 })
 
 describe('stripWriteExcludedFields', () => {
