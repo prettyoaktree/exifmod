@@ -2,6 +2,10 @@
 
 Headline changes in recent versions: major features and fixes that affect how you work in EXIFmod. Patch releases often include small fixes and polish that are not listed here. For the full list of every release, see [EXIFmod on GitHub Releases](https://github.com/prettyoaktree/exifmod/releases).
 
+## 1.8.7
+
+**Lens metadata:** when you write lens presets to a file, EXIFmod now also sets the **Lens ID** EXIF field to match the lens model, so apps that read Lens ID stay in sync with your preset.
+
 ## 1.8.6
 
 **Lightroom Classic plug-in (Windows):** you can install the same **EXIFmod Open** plug-in on Windows and open the selected photo in EXIFmod. **Help → Install Lightroom Classic Plugin** now bakes the path to your running EXIFmod (and shows success or errors in a normal in-app window instead of a system alert). See the [user guide](lightroom.html) for details.
