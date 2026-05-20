@@ -2,6 +2,10 @@
 
 Headline changes in recent versions: major features and fixes that affect how you work in EXIFmod. Patch releases often include small fixes and polish that are not listed here. For the full list of every release, see [EXIFmod on GitHub Releases](https://github.com/prettyoaktree/exifmod/releases).
 
+## 1.8.8
+
+**Fixed-lens cameras:** selecting a fixed-lens camera now ignores any separate Lens preset you had selected earlier, so the built-in lens saved in the Camera preset is the lens metadata that gets written.
+
 ## 1.8.7
 
 **Lens metadata:** when you write lens presets to a file, EXIFmod now also sets the **Lens ID** EXIF field to match the lens model, so apps that read Lens ID stay in sync with your preset.
