@@ -17,7 +17,7 @@ When you start EXIFmod for the first time, it will create a few sample presets t
 
 To save you time!
 
-- Fixed-lens cameras have only one lens (🤯), so we might as well stuff that lens information into the camera preset. Now, every time you select that Olympus XA camera preset, you are also tagging your file with its built-in Zuiko lens! Time, saved!
+- Fixed-lens cameras have only one lens (🤯), so we might as well stuff that lens information into the camera preset. When you select that Olympus XA camera preset, EXIFmod uses its built-in Zuiko lens and ignores any separate Lens preset you had selected. Time, saved!
 - Interchangeable-lens cameras can accept many lenses, but they might not be able to accept **all** the lenses you have. Specifying a lens mount in a camera preset will allow EXIFmod to filter the lens preset list to only show compatible lenses. This can make your workflow much faster if you regularly use multiple systems. 
 - OK... but adapters exist... right? Right! If you mark an interchangeable-lens camera preset with "Accepts Adapters", EXIFmod will stop filtering the lens preset list. Only do this for camera bodies with which you regularly use adapters.
 

@@ -42,7 +42,7 @@ import {
   matchStateForFilmCategory,
   matchStateForLensCategory
 } from '@shared/presetDraftFromMetadata.js'
-import { filterLensValues } from '@shared/lensFilter.js'
+import { filterLensValues, lensPresetIdForWrite } from '@shared/lensFilter.js'
 import {
   formatExposureTimeForUi,
   formatFnumberForUi,
@@ -1132,12 +1132,6 @@ export function App(): React.ReactElement {
       const api = window.exifmod
       if (!api) return { payload: null, err: t('ui.preloadUnavailable') }
       try {
-        let merged = await api.mergePayloads({
-          camera: st.cameraId,
-          lens: st.lensId,
-          author: st.authorId,
-          film: st.filmId
-        })
         let effCam: number | null = st.cameraId
         if (effCam == null && catalog) {
           const md = metadataByPath[pathKey(filePath)] ?? {}
@@ -1146,6 +1140,13 @@ export function App(): React.ReactElement {
           effCam = sugg.cameraId
         }
         const camMeta = cameraMetaForPending(catalog, effCam)
+        const lensForMerge = lensPresetIdForWrite(st.lensId, camMeta)
+        let merged = await api.mergePayloads({
+          camera: st.cameraId,
+          lens: lensForMerge,
+          author: st.authorId,
+          film: st.filmId
+        })
         const lockShutter = Boolean(camMeta?.locks_shutter)
         const lockAperture = Boolean(camMeta?.locks_aperture)
         if (!lockShutter && !st.clearShutter && st.exposureTime.trim()) {
@@ -1883,7 +1884,13 @@ export function App(): React.ReactElement {
           : cat === 'Film'
             ? 'clearFilm'
             : 'clearAuthor'
-    updatePendingForPaths(stagingPaths, (s) => ({ ...s, [key]: id, [clearKey]: false }))
+    updatePendingForPaths(stagingPaths, (s) => {
+      const next = { ...s, [key]: id, [clearKey]: false }
+      if (cat === 'Camera' && cameraMetaForPending(catalog, id)?.locks_lens) {
+        return { ...next, lensId: null, clearLens: false }
+      }
+      return next
+    })
   }
 
   const setClearFlag = useCallback(

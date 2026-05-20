@@ -39,3 +39,12 @@ export function filterLensValues(
   const merged = ['None', ...[...allowed].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))]
   return { allowed: merged, state }
 }
+
+export function lensPresetIdForWrite(
+  selectedLensId: number | null,
+  cameraMetadata: Pick<CameraMetadata, 'lens_system' | 'locks_lens'> | null | undefined
+): number | null {
+  return cameraMetadata?.locks_lens || cameraMetadata?.lens_system === 'fixed'
+    ? null
+    : selectedLensId
+}
