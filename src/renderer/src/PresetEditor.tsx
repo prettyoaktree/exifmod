@@ -201,6 +201,7 @@ export function PresetEditorModal(props: {
   const [fixedAperture, setFixedAperture] = useState(false)
   const [mounts, setMounts] = useState<string[]>([])
   const [err, setErr] = useState<string | null>(null)
+  const [filmStockText, setFilmStockText] = useState('')
   /** New Camera preset from file metadata: lens identity to apply when user switches to Fixed. */
   const prefillFixedLensIdentityRef = useRef<{ LensMake: string; LensModel: string } | null>(null)
 
@@ -231,6 +232,7 @@ export function PresetEditorModal(props: {
           pl = migrateAuthorPayloadFromDb(pl)
         }
         setPayload(pl)
+        setFilmStockText(category === 'Film' ? filmStockDisplayFromKeywordsPayload(pl) : '')
         if (rec.lens_system === 'fixed' || rec.lens_system === 'interchangeable') {
           setLensSystem(rec.lens_system)
         }
@@ -263,6 +265,7 @@ export function PresetEditorModal(props: {
           pl = migrateAuthorPayloadFromDb(pl)
         }
         setPayload(pl)
+        setFilmStockText(category === 'Film' ? filmStockDisplayFromKeywordsPayload(pl) : '')
         if (category === 'Camera') {
           setLensSystem(initialDraft.lens_system ?? 'interchangeable')
           setLensMount(initialDraft.lens_mount ?? '')
@@ -286,6 +289,7 @@ export function PresetEditorModal(props: {
       } else {
         setName('')
         setPayload({})
+        setFilmStockText('')
         setLensSystem('interchangeable')
         setLensMount('')
         setLensAdaptable(false)
@@ -638,7 +642,7 @@ export function PresetEditorModal(props: {
                   <PresetFieldRow label={t('presetEditor.authorIdentity')}>
                     <input
                       className="input"
-                      value={authorIdentityFromPayload(payload)}
+                      value={String(payload['Artist'] ?? payload['Creator'] ?? '')}
                       onChange={(e) => {
                         const v = e.target.value
                         setPayload((prev) => ({ ...prev, Artist: v, Creator: v }))
@@ -665,9 +669,11 @@ export function PresetEditorModal(props: {
                   <PresetFieldRow label={t('presetEditor.filmStockName')}>
                     <input
                       className="input"
-                      value={filmStockDisplayFromKeywordsPayload(payload)}
+                      value={filmStockText}
                       onChange={(e) => {
-                        const stockKw = filmStockKeywordFromDisplayName(e.target.value)
+                        const next = e.target.value
+                        setFilmStockText(next)
+                        const stockKw = filmStockKeywordFromDisplayName(next)
                         setPayload((p) => ({
                           ...p,
                           Keywords: stockKw ? ['film', stockKw] : ['film']
