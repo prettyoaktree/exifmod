@@ -2,6 +2,10 @@
 
 Headline changes in recent versions: major features and fixes that affect how you work in EXIFmod. Patch releases often include small fixes and polish that are not listed here. For the full list of every release, see [EXIFmod on GitHub Releases](https://github.com/prettyoaktree/exifmod/releases).
 
+## 1.8.9
+
+**Preset editing:** Author names and film stocks now keep spaces while you type, so names like “Jane Doe” and “Kodak Portra 400” behave normally before save. Lens writes also update the Lens field along with Lens Model and Lens ID.
+
 ## 1.8.8
 
 **Fixed-lens cameras:** selecting a fixed-lens camera now ignores any separate Lens preset you had selected earlier, so the built-in lens saved in the Camera preset is the lens metadata that gets written.
