@@ -31,15 +31,16 @@ describe('sanitizeWritePayload', () => {
     expect(sanitizeWritePayload({ Copyright: already })).toEqual({ Copyright: already })
   })
 
-  it('mirrors LensModel to LensID', () => {
+  it('mirrors LensModel to Lens and LensID', () => {
     expect(sanitizeWritePayload({ LensModel: 'CAT-35-14-A' })).toEqual({
       LensModel: 'CAT-35-14-A',
+      Lens: 'CAT-35-14-A',
       LensID: 'CAT-35-14-A'
     })
   })
 
-  it('clears LensID when LensModel is empty', () => {
-    expect(sanitizeWritePayload({ LensModel: '' })).toEqual({ LensModel: '', LensID: '' })
+  it('clears Lens and LensID when LensModel is empty', () => {
+    expect(sanitizeWritePayload({ LensModel: '' })).toEqual({ LensModel: '', Lens: '', LensID: '' })
   })
 })
 
