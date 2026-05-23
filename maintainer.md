@@ -6,6 +6,8 @@ Operational checklist for **exifmod** releases: signing, GitHub Actions secrets,
 
 In **Settings → Secrets and variables → Actions**, configure:
 
+### Secrets
+
 | Secret | Purpose |
 | ------ | ------- |
 | `CSC_LINK` | Base64-encoded **Developer ID Application** `.p12` (same format expected by `apple-actions/import-codesign-certs`). |
@@ -16,24 +18,16 @@ In **Settings → Secrets and variables → Actions**, configure:
 | `AZURE_TENANT_ID` | Entra tenant ID for the app registration used by Windows release signing. |
 | `AZURE_CLIENT_ID` | Application (client) ID for the Windows release signing service principal. |
 | `AZURE_CLIENT_SECRET` | Client secret value for the Windows release signing service principal. |
+| `AZURE_SIGNING_PUBLISHER_NAME` | Publisher/common name expected in the Windows signing certificate subject. |
+| `AZURE_SIGNING_ENDPOINT` | Azure Artifact Signing account endpoint. |
+| `AZURE_SIGNING_CERTIFICATE_PROFILE_NAME` | Certificate profile name used by Windows release signing. |
+| `AZURE_SIGNING_ACCOUNT_NAME` | Azure Artifact Signing account name. |
 
 The workflow [`.github/workflows/release-macos.yml`](.github/workflows/release-macos.yml) writes the `.p8` to a temp path and exports `APPLE_API_KEY`, `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER` for [`scripts/afterSign.mjs`](scripts/afterSign.mjs).
 
-The workflow [`.github/workflows/release-windows.yml`](.github/workflows/release-windows.yml) passes the Azure values to `electron-builder`, which signs Windows artifacts through Azure Artifact Signing (`build.win.azureSignOptions` in [`package.json`](package.json)). With `electron-builder@25.1.8`, keep `publisherName` in `build.win.publisherName`; unknown `azureSignOptions` keys are passed directly to `Invoke-TrustedSigning`.
+The workflow [`.github/workflows/release-windows.yml`](.github/workflows/release-windows.yml) injects Windows signing values into the local CI checkout with [`scripts/configureWindowsSigning.mjs`](scripts/configureWindowsSigning.mjs), then passes the Azure authentication secrets to `electron-builder`. Keep the concrete Azure resource names in GitHub Actions secrets, not in tracked repo files; this also lets GitHub mask them if signing commands are printed in workflow logs.
 
 Use [`.github/workflows/test-windows-signing.yml`](.github/workflows/test-windows-signing.yml) to verify Windows signing without publishing a GitHub Release. It builds the NSIS installer with `--publish never` and fails if `Get-AuthenticodeSignature` does not return `Valid` for the expected publisher.
-
-Current Windows signing resource names:
-
-| Resource | Value |
-| -------- | ----- |
-| Subscription | `5af04908-5e57-4f29-b319-1a8e5c52cd94` |
-| Resource group | `ay-trusted-signing` |
-| Artifact Signing account | `ay-trusted-signing` |
-| Account endpoint | `https://eus.codesigning.azure.net/` |
-| Certificate profile | `ay-cert` |
-| Publisher name | `Alon Yaffe` |
-| Signing service principal | `github-exifmod-windows-signing` |
 
 The signing identity must have **Artifact Signing Certificate Profile Signer** on the certificate profile scope:
 
@@ -41,10 +35,10 @@ The signing identity must have **Artifact Signing Certificate Profile Signer** o
 az role assignment create \
   --assignee <service-principal-object-id> \
   --role "Artifact Signing Certificate Profile Signer" \
-  --scope "/subscriptions/5af04908-5e57-4f29-b319-1a8e5c52cd94/resourceGroups/ay-trusted-signing/providers/Microsoft.CodeSigning/codeSigningAccounts/ay-trusted-signing/certificateProfiles/ay-cert"
+  --scope "/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.CodeSigning/codeSigningAccounts/<account-name>/certificateProfiles/<profile-name>"
 ```
 
-Rotate the `AZURE_CLIENT_SECRET` value periodically. When rotating, create a new app credential for `github-exifmod-windows-signing` and update the GitHub Actions secret with the new **secret value** (not the secret ID).
+Rotate the `AZURE_CLIENT_SECRET` value periodically. When rotating, create a new app credential for the Windows signing app registration and update the GitHub Actions secret with the new **secret value** (not the secret ID).
 
 ## Release checklist
 

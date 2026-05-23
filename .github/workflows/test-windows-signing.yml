@@ -30,6 +30,14 @@ jobs:
           npx tsc -p tsconfig.node.json --noEmit
           npm run build:vite
 
+      - name: Configure Windows signing
+        env:
+          AZURE_SIGNING_PUBLISHER_NAME: ${{ secrets.AZURE_SIGNING_PUBLISHER_NAME }}
+          AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          AZURE_SIGNING_CERTIFICATE_PROFILE_NAME: ${{ secrets.AZURE_SIGNING_CERTIFICATE_PROFILE_NAME }}
+          AZURE_SIGNING_ACCOUNT_NAME: ${{ secrets.AZURE_SIGNING_ACCOUNT_NAME }}
+        run: node scripts/configureWindowsSigning.mjs
+
       - name: Build signed Windows installer
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
@@ -38,6 +46,8 @@ jobs:
         run: npx electron-builder --win --publish never
 
       - name: Verify installer signature
+        env:
+          AZURE_SIGNING_PUBLISHER_NAME: ${{ secrets.AZURE_SIGNING_PUBLISHER_NAME }}
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -47,6 +57,6 @@ jobs:
           $sig = Get-AuthenticodeSignature $EXE
           $sig | Format-List
           if ($sig.Status -ne 'Valid') { throw "Installer signature is $($sig.Status)" }
-          if ($sig.SignerCertificate.Subject -notlike '*CN=Alon Yaffe*') {
+          if ($sig.SignerCertificate.Subject -notlike "*CN=$env:AZURE_SIGNING_PUBLISHER_NAME*") {
             throw "Unexpected signer subject: $($sig.SignerCertificate.Subject)"
           }

@@ -1,6 +1,6 @@
 # Build, sign, and publish Windows artifacts to GitHub Releases when a version tag is pushed.
 # Publishes alongside the macOS job; electron-updater uses latest.yml on Windows.
-# Required repo secrets (see maintainer.md): AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET
+# Required repo secrets/variables: see maintainer.md
 
 name: Release (Windows)
 
@@ -28,6 +28,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Configure Windows signing
+        env:
+          AZURE_SIGNING_PUBLISHER_NAME: ${{ secrets.AZURE_SIGNING_PUBLISHER_NAME }}
+          AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          AZURE_SIGNING_CERTIFICATE_PROFILE_NAME: ${{ secrets.AZURE_SIGNING_CERTIFICATE_PROFILE_NAME }}
+          AZURE_SIGNING_ACCOUNT_NAME: ${{ secrets.AZURE_SIGNING_ACCOUNT_NAME }}
+        run: node scripts/configureWindowsSigning.mjs
 
       - name: Publish to GitHub Releases
         env:
