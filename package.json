@@ -108,14 +108,13 @@
     },
     "win": {
       "artifactName": "${productName}-${version}.${ext}",
+      "publisherName": "Alon Yaffe",
       "azureSignOptions": {
-        "publisherName": "Alon Yaffe",
         "endpoint": "https://eus.codesigning.azure.net/",
         "certificateProfileName": "ay-cert",
         "codeSigningAccountName": "ay-trusted-signing",
-        "fileDigest": "SHA256",
-        "timestampRfc3161": "http://timestamp.acs.microsoft.com",
-        "timestampDigest": "SHA256"
+        "TimestampRfc3161": "http://timestamp.acs.microsoft.com",
+        "TimestampDigest": "SHA256"
       },
       "target": [
         {

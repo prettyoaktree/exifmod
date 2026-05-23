@@ -19,7 +19,7 @@ In **Settings → Secrets and variables → Actions**, configure:
 
 The workflow [`.github/workflows/release-macos.yml`](.github/workflows/release-macos.yml) writes the `.p8` to a temp path and exports `APPLE_API_KEY`, `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER` for [`scripts/afterSign.mjs`](scripts/afterSign.mjs).
 
-The workflow [`.github/workflows/release-windows.yml`](.github/workflows/release-windows.yml) passes the Azure values to `electron-builder`, which signs Windows artifacts through Azure Artifact Signing (`build.win.azureSignOptions` in [`package.json`](package.json)).
+The workflow [`.github/workflows/release-windows.yml`](.github/workflows/release-windows.yml) passes the Azure values to `electron-builder`, which signs Windows artifacts through Azure Artifact Signing (`build.win.azureSignOptions` in [`package.json`](package.json)). With `electron-builder@25.1.8`, keep `publisherName` in `build.win.publisherName`; unknown `azureSignOptions` keys are passed directly to `Invoke-TrustedSigning`.
 
 Use [`.github/workflows/test-windows-signing.yml`](.github/workflows/test-windows-signing.yml) to verify Windows signing without publishing a GitHub Release. It builds the NSIS installer with `--publish never` and fails if `Get-AuthenticodeSignature` does not return `Valid` for the expected publisher.
 
