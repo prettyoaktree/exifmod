@@ -1,5 +1,6 @@
-# Build and publish Windows artifacts to GitHub Releases when a version tag is pushed.
+# Build, sign, and publish Windows artifacts to GitHub Releases when a version tag is pushed.
 # Publishes alongside the macOS job; electron-updater uses latest.yml on Windows.
+# Required repo secrets (see maintainer.md): AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET
 
 name: Release (Windows)
 
@@ -31,6 +32,9 @@ jobs:
       - name: Publish to GitHub Releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: npm run release:github
 
       - name: Upload NSIS SHA256 for winget manifest bump

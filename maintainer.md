@@ -13,10 +13,38 @@ In **Settings → Secrets and variables → Actions**, configure:
 | `APPLE_API_KEY_P8_BASE64` | Base64-encoded contents of the App Store Connect **API key** `.p8` file. |
 | `APPLE_API_KEY_ID` | Key ID from App Store Connect. |
 | `APPLE_API_ISSUER` | Issuer ID (UUID) from App Store Connect. |
+| `AZURE_TENANT_ID` | Entra tenant ID for the app registration used by Windows release signing. |
+| `AZURE_CLIENT_ID` | Application (client) ID for the Windows release signing service principal. |
+| `AZURE_CLIENT_SECRET` | Client secret value for the Windows release signing service principal. |
 
 The workflow [`.github/workflows/release-macos.yml`](.github/workflows/release-macos.yml) writes the `.p8` to a temp path and exports `APPLE_API_KEY`, `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER` for [`scripts/afterSign.mjs`](scripts/afterSign.mjs).
 
-**Windows (optional):** To **code-sign** the NSIS installer (fewer SmartScreen warnings), configure `CSC_LINK` / `CSC_KEY_PASSWORD` for a **PFX** in the same way many Electron projects use `electron-builder` on Windows (see [electron-builder code signing](https://www.electron.build/code-signing)). If unset, CI still produces an **unsigned** Windows build that users can run with an extra SmartScreen step.
+The workflow [`.github/workflows/release-windows.yml`](.github/workflows/release-windows.yml) passes the Azure values to `electron-builder`, which signs Windows artifacts through Azure Artifact Signing (`build.win.azureSignOptions` in [`package.json`](package.json)).
+
+Use [`.github/workflows/test-windows-signing.yml`](.github/workflows/test-windows-signing.yml) to verify Windows signing without publishing a GitHub Release. It builds the NSIS installer with `--publish never` and fails if `Get-AuthenticodeSignature` does not return `Valid` for the expected publisher.
+
+Current Windows signing resource names:
+
+| Resource | Value |
+| -------- | ----- |
+| Subscription | `5af04908-5e57-4f29-b319-1a8e5c52cd94` |
+| Resource group | `ay-trusted-signing` |
+| Artifact Signing account | `ay-trusted-signing` |
+| Account endpoint | `https://eus.codesigning.azure.net/` |
+| Certificate profile | `ay-cert` |
+| Publisher name | `Alon Yaffe` |
+| Signing service principal | `github-exifmod-windows-signing` |
+
+The signing identity must have **Artifact Signing Certificate Profile Signer** on the certificate profile scope:
+
+```bash
+az role assignment create \
+  --assignee <service-principal-object-id> \
+  --role "Artifact Signing Certificate Profile Signer" \
+  --scope "/subscriptions/5af04908-5e57-4f29-b319-1a8e5c52cd94/resourceGroups/ay-trusted-signing/providers/Microsoft.CodeSigning/codeSigningAccounts/ay-trusted-signing/certificateProfiles/ay-cert"
+```
+
+Rotate the `AZURE_CLIENT_SECRET` value periodically. When rotating, create a new app credential for `github-exifmod-windows-signing` and update the GitHub Actions secret with the new **secret value** (not the secret ID).
 
 ## Release checklist
 

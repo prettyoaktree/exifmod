@@ -1,0 +1,52 @@
+# Build and sign the Windows installer without publishing a GitHub Release.
+# Use this workflow to verify Azure Artifact Signing before cutting a release tag.
+
+name: Test (Windows Signing)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signing-smoke:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck and build app
+        run: |
+          npx tsc -p tsconfig.node.json --noEmit
+          npm run build:vite
+
+      - name: Build signed Windows installer
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: npx electron-builder --win --publish never
+
+      - name: Verify installer signature
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $VERSION = node -p "require('./package.json').version"
+          $EXE = "release/EXIFmod-${VERSION}-setup.exe"
+          if (-not (Test-Path $EXE)) { throw "Missing $EXE" }
+          $sig = Get-AuthenticodeSignature $EXE
+          $sig | Format-List
+          if ($sig.Status -ne 'Valid') { throw "Installer signature is $($sig.Status)" }
+          if ($sig.SignerCertificate.Subject -notlike '*CN=Alon Yaffe*') {
+            throw "Unexpected signer subject: $($sig.SignerCertificate.Subject)"
+          }
