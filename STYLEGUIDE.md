@@ -124,7 +124,7 @@ The install-and-use story on **[the public site](https://prettyoaktree.github.io
 
 - **Conversational and nontechnical.** Write for photographers and editors, not implementers. Use direct address ("you") and plain language; avoid internal jargon (`src/…` paths, IPC names, merge-order internals).
 - **Personality-forward is allowed.** Dry humor, playful asides, and mild sarcasm are acceptable in normal workflow text when instructions remain clear.
-- **Safety first in risky moments.** For data loss, overwrite behavior, security prompts (SmartScreen, notarization, permissions), and restore/recovery steps: make the action explicit first; humor may follow, but must not obscure the instruction.
+- **Safety first in risky moments.** For data loss, overwrite behavior, notarization, permissions, and restore/recovery steps: make the action explicit first; humor may follow, but must not obscure the instruction.
 - **Commands and env vars** are fine when the user is the one typing them; frame optional tuning as clearly optional. Deep implementation detail belongs in **[`docs/exif-preset-mapping.md`](docs/exif-preset-mapping.md)** (GitHub) or the doc site footer link, not the middle of a how-to.
 
 **Emphasis and readability**
@@ -142,8 +142,8 @@ The install-and-use story on **[the public site](https://prettyoaktree.github.io
 
 **Examples (for consistency)**
 
-- **Good (voice + clarity):** "SmartScreen may appear on first run. If you trust this release, choose **More info → Run anyway**. Yes, Windows is being dramatic."
-- **Bad (clarity buried by joke):** "Windows will probably panic; click around until it works."
+- **Good (voice + clarity):** "macOS may ask you to confirm the app the first time it opens. Choose **Open** if you trust this release. Yes, computers love paperwork."
+- **Bad (clarity buried by joke):** "Your computer may panic; click around until it works."
 - **Good (bolding):** "Use **Manage Presets**, then choose **Camera** or **Lens**."
 - **Bad (over-bolding):** "**Use** **Manage Presets** and **then** **choose** **Camera** **or** **Lens**."
 - **Good (longer bullet allowed):** A two-sentence bullet that explains one workflow caveat and its immediate action.

@@ -22,7 +22,7 @@ EXIFmod is a desktop app for photographers and editors who want to quickly apply
 Download the installer for your platform from [GitHub Releases](https://github.com/prettyoaktree/exifmod/releases) and run it.
 
 - Mac: the app is signed and notarized (that just means macOS will actually allow you to run it without a frustrating trip to the Settings menu).
-- Windows: the app is not code-signed (it was too expensive), so the first time you run the installer or the app, Microsoft Defender SmartScreen might block it. If you trust this release (and you do), choose More info → Run anyway.
+- Windows: run the setup installer and follow the prompts.
 
 ### Mac — Homebrew
 
@@ -43,7 +43,7 @@ In PowerShell, Command Prompt, or Terminal:
 winget install -e --id PrettyOakTree.EXIFmod
 ```
 
-Winget will install ExifTool if you need it. Neat! SmartScreen can show up on first run — same as above, More info → Run anyway if you trust the app (you do).
+Winget will install ExifTool if you need it. Neat!
 
 ### Automatic Updates
 

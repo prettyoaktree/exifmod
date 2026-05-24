@@ -18,7 +18,7 @@ The public site (marketing + **user guide**) is on **GitHub Pages** at **https:/
 Download the correct installer for your platform from [GitHub Releases](https://github.com/prettyoaktree/exifmod/releases) and run it.
 
 - **macOS:** the app is signed and notarized.
-- **Windows:** the app is not code-signed. The first time you run the installer or the app, **Microsoft Defender SmartScreen** may block it. Choose **More info** → **Run anyway** if you trust this release.
+- **Windows:** run the setup installer.
 
 ### macOS Installation via Homebrew
 
@@ -36,7 +36,6 @@ winget install -e --id PrettyOakTree.EXIFmod
 ```
 
 - Winget installs **ExifTool** when needed.
-- **SmartScreen** may appear on first run — choose **More info** → **Run anyway**.
 
 ### Updates
 
