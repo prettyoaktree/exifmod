@@ -16,8 +16,8 @@ export {
   KEYWORDS_MERGED_SUM_MAX_UTF8_BYTES
 } from '../../shared/exifLimits.js'
 
-/** JPEG/TIFF — metadata written in-file via ExifTool `-overwrite_original`. */
-export const RASTER_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.tif', '.tiff'])
+/** JPEG/TIFF/JPEG XL — metadata written in-file via ExifTool `-overwrite_original`. */
+export const RASTER_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.tif', '.tiff', '.jxl'])
 
 /**
  * Camera RAW and similar — metadata writes go to XMP sidecar only (never rewrite the container).

@@ -132,7 +132,8 @@
           "jpg",
           "jpeg",
           "tif",
-          "tiff"
+          "tiff",
+          "jxl"
         ],
         "name": "Image",
         "role": "Editor"

@@ -10,6 +10,7 @@ describe('imagePaths', () => {
 
   it('classifies raster in-file extensions', () => {
     expect(isRasterInFileWritePath('/a/b.JPEG')).toBe(true)
+    expect(isRasterInFileWritePath('/a/b.jxl')).toBe(true)
     expect(isRasterInFileWritePath('/a/raw.nef')).toBe(false)
   })
 

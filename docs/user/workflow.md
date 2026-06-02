@@ -8,10 +8,10 @@
 
 ## Supported File Formats
 
-EXIFmod works with JPEG, TIFF, and common RAW files.
+EXIFmod works with JPEG, JPEG XL, TIFF, and common RAW files.
 
 - RAW: metadata goes into an XMP sidecar file next to each original file (so your original is left alone in the usual RAW sense).
-- JPEG and TIFF: metadata is written directly into the file. EXIFmod will prompt you to create a backup, if you'd like.
+- JPEG, JPEG XL, and TIFF: metadata is written directly into the file. EXIFmod will prompt you to create a backup, if you'd like.
 
 ## Using Film Roll Logs / Shot Logs
 

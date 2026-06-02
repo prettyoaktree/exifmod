@@ -49,7 +49,7 @@ Operator-only signing (Apple + optional Windows), notarization, and GitHub Actio
 
 ## macOS behavior notes
 
-- **Open With** (`.jpg`, `.jpeg`, `.tif`, `.tiff`): Finder can open files with EXIFmod; the app loads the **parent folder** as the session and **selects** the opened file. **Multiple** files + Open With shows a dialog and does not load a session.
+- **Open With** (`.jpg`, `.jpeg`, `.tif`, `.tiff`, `.jxl`): Finder can open files with EXIFmod; the app loads the **parent folder** as the session and **selects** the opened file. **Multiple** files + Open With shows a dialog and does not load a session.
 - **Closing the main window** quits the app (custom `window-all-closed` behavior), not the default “stay in Dock with no windows.”
 - **Menu bar shows “Electron” during development** — packaged builds use `build.productName` (`EXIFmod`). See [README.md](../README.md).
 - **Development user data** — [src/main/setDevUserDataPath.ts](../src/main/setDevUserDataPath.ts) redirects Electron `userData` to a sibling folder with a `-dev` suffix when `!app.isPackaged`, so preset SQLite and preferences do not overlap the installed app.
