@@ -19,6 +19,7 @@ import {
   DESCRIBE_SYSTEM_PROMPT_MAX_BYTES_PLACEHOLDER,
   formatDescribeSystemPromptTemplate,
   ollamaDescribeImage,
+  ollamaServerReachable,
   ollamaWarmup,
   setDescribeSystemPromptFromUser
 } from './ollamaDescribe.js'
@@ -91,6 +92,35 @@ describe('ollamaWarmup', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')))
     const r = await ollamaWarmup()
     expect(r.ok).toBe(false)
+  })
+})
+
+describe('ollamaServerReachable', () => {
+  const originalFetch = globalThis.fetch
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    globalThis.fetch = originalFetch
+  })
+
+  it('uses /api/version and treats an ok response as reachable', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ version: '0.11.0' })
+      })
+    )
+
+    await expect(ollamaServerReachable()).resolves.toBe(true)
+    const [url, init] = vi.mocked(fetch).mock.calls[0]!
+    expect(String(url)).toContain('/api/version')
+    expect(init?.method).toBe('GET')
+  })
+
+  it('returns false when the server probe fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')))
+    await expect(ollamaServerReachable()).resolves.toBe(false)
   })
 })
 
@@ -177,6 +207,29 @@ describe('ollamaDescribeImage', () => {
     expect(content).toContain(' end.')
     expect(content).toContain(String(IMAGEDESCRIPTION_MAX_UTF8_BYTES))
     expect(content).not.toContain('You label a photograph for EXIF ImageDescription')
+  })
+
+  it('returns a clear message when Ollama is missing llama-server', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () =>
+          JSON.stringify({
+            error:
+              'error starting llama-server: llama-server binary not found (checked: /opt/homebrew/Cellar/ollama/0.30.0/libexec/lib/ollama/llama-server)'
+          })
+      })
+    )
+
+    const r = await ollamaDescribeImage('/tmp/fake.jpg', { model: 'm1' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) {
+      expect(r.error).toContain('model runner is missing')
+      expect(r.error).not.toContain('Ollama HTTP 500')
+      expect(r.error).not.toContain('/opt/homebrew/Cellar')
+    }
   })
 })
 

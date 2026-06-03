@@ -48,6 +48,8 @@ function looksLikeDescribePromptEcho(description: string): boolean {
 const CHAT_TIMEOUT_MS = 180_000
 /** Text-only warmup to verify the configured model responds (startup / availability). */
 const WARMUP_TIMEOUT_MS = 30_000
+/** Lightweight server reachability check independent of the configured model. */
+const SERVER_REACHABILITY_TIMEOUT_MS = 5_000
 
 /** Resolved loopback API base URL and model (same env defaults as describe). */
 export function resolveOllamaConnection(options?: { baseUrl?: string; model?: string }): { api: URL; model: string } {
@@ -55,6 +57,29 @@ export function resolveOllamaConnection(options?: { baseUrl?: string; model?: st
   const model = options?.model ?? resolveOllamaModelName()
   const api = assertLoopbackOllamaBaseUrl(baseUrl)
   return { api, model }
+}
+
+/**
+ * Minimal Ollama server reachability check. This intentionally does not hit `/api/chat`,
+ * so a missing or unloaded model does not make the app report that Ollama is down.
+ */
+export async function ollamaServerReachable(options?: { baseUrl?: string }): Promise<boolean> {
+  let api: URL
+  try {
+    api = assertLoopbackOllamaBaseUrl(options?.baseUrl ?? getOllamaBaseUrlString())
+  } catch {
+    return false
+  }
+
+  try {
+    const res = await fetch(new URL('/api/version', api).href, {
+      method: 'GET',
+      signal: AbortSignal.timeout(SERVER_REACHABILITY_TIMEOUT_MS)
+    })
+    return res.ok
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -168,6 +193,24 @@ function parseAssistantJson(content: string): { description: string; keywords: s
   }
 }
 
+function formatOllamaHttpError(status: number, errText: string): string {
+  let detail = errText.trim()
+  try {
+    const parsed = JSON.parse(detail) as unknown
+    if (typeof parsed === 'object' && parsed !== null && 'error' in parsed) {
+      detail = String((parsed as { error?: unknown }).error ?? '').trim()
+    }
+  } catch {
+    /* keep raw text */
+  }
+
+  if (detail.toLowerCase().includes('llama-server binary not found')) {
+    return 'Ollama is running, but its model runner is missing. Reinstall or upgrade Ollama, then restart Ollama and try again.'
+  }
+
+  return `Ollama HTTP ${status}${detail ? `: ${detail.slice(0, 200)}` : ''}`
+}
+
 export type OllamaDescribeResult =
   | { ok: true; description: string; keywords: string[] }
   | { ok: false; error: string }
@@ -225,7 +268,7 @@ export async function ollamaDescribeImage(
     })
     if (!res.ok) {
       const errText = await res.text().catch(() => '')
-      return { ok: false, error: `Ollama HTTP ${res.status}${errText ? `: ${errText.slice(0, 200)}` : ''}` }
+      return { ok: false, error: formatOllamaHttpError(res.status, errText) }
     }
     const data = (await res.json()) as { message?: { content?: string } }
     const content = data.message?.content

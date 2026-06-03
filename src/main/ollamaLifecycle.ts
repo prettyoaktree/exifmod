@@ -2,13 +2,13 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { app } from 'electron'
 import type { BrowserWindow } from 'electron'
 import { i18next } from './i18n.js'
-import { ollamaWarmup } from './ollamaDescribe.js'
+import { ollamaServerReachable } from './ollamaDescribe.js'
 
 export type OllamaStartupFlowResult =
   | { status: 'ready'; initialReachable: boolean }
-  /** Warmup failed but `ollama` is on PATH — user can start the server from the inline control. */
+  /** Server probe failed but `ollama` is on PATH — user can start the server from the inline control. */
   | { status: 'server_down' }
-  /** `ollama` CLI not found on PATH after warmup failed — cannot start or use local install hints. */
+  /** `ollama` CLI not found on PATH after server probe failed — cannot start or use local install hints. */
   | { status: 'no_cli' }
 
 const POLL_MS = 1500
@@ -66,12 +66,12 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function pollUntilWarmup(deadline: number): Promise<boolean> {
+async function pollUntilServerReachable(deadline: number): Promise<boolean> {
   while (Date.now() < deadline) {
-    if ((await ollamaWarmup()).ok) return true
+    if (await ollamaServerReachable()) return true
     await sleep(POLL_MS)
   }
-  return (await ollamaWarmup()).ok
+  return ollamaServerReachable()
 }
 
 function spawnOllamaServe(): Promise<ChildProcess | null> {
@@ -105,7 +105,7 @@ async function tryLaunchOllamaAndWait(): Promise<{ ok: true } | { ok: false; err
   }
   ollamaServeChild = child
 
-  const ok = await pollUntilWarmup(Date.now() + SPAWN_PHASE_MS)
+  const ok = await pollUntilServerReachable(Date.now() + SPAWN_PHASE_MS)
   if (ok) {
     ollamaLaunchedByApp = true
     return { ok: true }
@@ -133,7 +133,7 @@ export function runOllamaStartupFlow(win: BrowserWindow | null): Promise<OllamaS
  * show the Start Ollama drawer without replacing the one-time startup flow cache.
  */
 export async function checkOllamaAvailability(): Promise<OllamaStartupFlowResult> {
-  if ((await ollamaWarmup()).ok) {
+  if (await ollamaServerReachable()) {
     return { status: 'ready', initialReachable: true }
   }
 
@@ -149,7 +149,7 @@ export async function checkOllamaAvailability(): Promise<OllamaStartupFlowResult
  */
 export function ollamaTryStartServer(win: BrowserWindow | null): Promise<{ ok: true } | { ok: false; error: string }> {
   const run = async (): Promise<{ ok: true } | { ok: false; error: string }> => {
-    if ((await ollamaWarmup()).ok) {
+    if (await ollamaServerReachable()) {
       return { ok: true }
     }
     win?.webContents.send('ollama:launching')
