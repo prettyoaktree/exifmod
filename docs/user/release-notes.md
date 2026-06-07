@@ -2,6 +2,10 @@
 
 Headline changes in recent versions: major features and fixes that affect how you work in EXIFmod. Patch releases often include small fixes and polish that are not listed here. For the full list of every release, see [EXIFmod on GitHub Releases](https://github.com/prettyoaktree/exifmod/releases).
 
+## 1.9.1
+
+**File types:** the file list now has a **Verified / All** toggle. Verified keeps the familiar JPEG, JPEG XL, TIFF, and common RAW list; All also shows file types your installed ExifTool version reports as writable.
+
 ## 1.9.0
 
 **JPEG XL:** EXIFmod can now open `.jxl` files and write metadata directly into them, alongside the existing JPEG, TIFF, and RAW workflows.
