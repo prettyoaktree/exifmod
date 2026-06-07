@@ -24,6 +24,52 @@ function execFileSyncSafe(cmd: string, args: string[]): string {
   return execFileSync(cmd, args, { encoding: 'utf8' }) as string
 }
 
+let writableExtensionsCache: { exiftoolPath: string; extensions: ReadonlySet<string> } | null = null
+
+function fileExtensionLower(filePath: string): string | null {
+  const lower = filePath.toLowerCase()
+  const dot = lower.lastIndexOf('.')
+  if (dot < 0) return null
+  return lower.slice(dot)
+}
+
+export function parseExiftoolExtensionList(text: string): Set<string> {
+  const extensions = new Set<string>()
+  for (const rawLine of text.split(/\r?\n/)) {
+    let line = rawLine.trim()
+    if (!line) continue
+    if (/file extensions/i.test(line)) {
+      const colon = line.indexOf(':')
+      if (colon < 0) continue
+      line = line.slice(colon + 1).trim()
+      if (!line) continue
+    }
+    for (const token of line.split(/\s+/)) {
+      const normalized = token.replace(/^[.*]+/, '').replace(/[,:;]+$/, '').trim().toLowerCase()
+      if (!/^[a-z0-9][a-z0-9_]*$/.test(normalized)) continue
+      extensions.add(`.${normalized}`)
+    }
+  }
+  return extensions
+}
+
+export function listExiftoolWritableExtensions(exiftoolPath: string): ReadonlySet<string> {
+  if (writableExtensionsCache?.exiftoolPath === exiftoolPath) return writableExtensionsCache.extensions
+  const text = execFileSyncSafe(exiftoolPath, ['-listwf'])
+  const extensions = parseExiftoolExtensionList(text)
+  writableExtensionsCache = { exiftoolPath, extensions }
+  return extensions
+}
+
+export function isPathExtensionInSet(filePath: string, extensions: ReadonlySet<string>): boolean {
+  const ext = fileExtensionLower(filePath)
+  return ext != null && extensions.has(ext)
+}
+
+export function isExiftoolWritablePath(exiftoolPath: string, filePath: string): boolean {
+  return isPathExtensionInSet(filePath, listExiftoolWritableExtensions(exiftoolPath))
+}
+
 export function validateExiftool(exiftoolPath?: string): string | null {
   const path = exiftoolPath ?? resolveExiftoolPath()
   if (!path) {

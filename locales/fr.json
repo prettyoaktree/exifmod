@@ -146,7 +146,9 @@
     "exiftoolNotFound": "ExifTool introuvable (requis pour EXIFmod)",
     "exiftoolExit": "exiftool s’est terminé avec le code {{code}}",
     "finderMultiPathTitle": "EXIFmod",
-    "finderMultiPathDetail": "N’ouvrez qu’un seul fichier ou dossier à la fois."
+    "finderMultiPathDetail": "N’ouvrez qu’un seul fichier ou dossier à la fois.",
+    "exiftoolWritableFormatsUnavailable": "Impossible de lire les formats de fichier modifiables par ExifTool.",
+    "unsupportedWritableFileType": "ExifTool n’indique pas que ce type de fichier est modifiable :\n{{path}}"
   },
   "store": {
     "unsupportedCategory": "Catégorie de préréglage non prise en charge : {{category}}",
@@ -164,6 +166,10 @@
     "errorPreload": "Erreur :",
     "errorPreloadBody": "EXIFmod doit s’exécuter dans la fenêtre de l’application (p. ex. <code>npm run dev</code>), pas dans un onglet du navigateur — la connexion aux fichiers et aux métadonnées est indisponible. Si vous lancez déjà Electron, exécutez <code>npx electron-vite build</code> une fois pour générer <code>out/preload/index.mjs</code>.",
     "openFolder": "Ouvrir un dossier",
+    "fileTypeSelectorLabel": "Sélectionner les types de fichiers à afficher",
+    "fileTypeSelectorVerified": "Vérifiés",
+    "fileTypeSelectorAllSupported": "Tous",
+    "showExiftoolWritableFilesHint": "Inclut chaque extension que votre version installée d’ExifTool indique comme modifiable.",
     "selectAll": "Tout sélectionner",
     "deselectAll": "Tout désélectionner",
     "previewAlt": "Aperçu",

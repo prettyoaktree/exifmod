@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { ConfigCatalog, CreatePresetInput, PresetRecord, UpdatePresetInput } from '../../shared/types'
+import type { ConfigCatalog, CreatePresetInput, FileListMode, PresetRecord, UpdatePresetInput } from '../../shared/types'
 import type { LrPluginInstallResult } from '../../shared/lrPluginInstallResult'
 import type { UpdaterUiPayload } from '../../shared/updaterUi'
 import type { FilmRollLogCreateInput, FilmRollParsedLog } from '../../shared/filmRollLog'
@@ -38,8 +38,8 @@ export interface ExifmodApi {
   suggestedLensMounts: () => Promise<string[]>
   unusedLensMounts: () => Promise<string[]>
   clearUnusedLensMount: (mount: string) => Promise<{ cleared: number }>
-  resolveImageList: (targetPath: string) => Promise<string[]>
-  listImagesInDir: (dirPath: string) => Promise<string[]>
+  resolveImageList: (targetPath: string, opts?: { mode?: FileListMode }) => Promise<string[]>
+  listImagesInDir: (dirPath: string, opts?: { mode?: FileListMode }) => Promise<string[]>
   isFile: (filePath: string) => Promise<boolean>
   readImageDataUrl: (filePath: string) => Promise<string>
   createFilmRollLog: (input: FilmRollLogCreateInput) => Promise<{ canceled: true } | { canceled: false; filePath: string }>

@@ -92,6 +92,8 @@ export interface DataPaths {
   configDir: string
 }
 
+export type FileListMode = 'verified' | 'exiftoolWritable'
+
 /** One preset row skipped during merge import from another sqlite file. */
 export interface MergeImportSkip {
   category: string

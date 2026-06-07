@@ -146,7 +146,9 @@
     "exiftoolNotFound": "ExifTool was not found (required for EXIFmod)",
     "exiftoolExit": "exiftool exited with {{code}}",
     "finderMultiPathTitle": "EXIFmod",
-    "finderMultiPathDetail": "Open only one file or folder at a time."
+    "finderMultiPathDetail": "Open only one file or folder at a time.",
+    "exiftoolWritableFormatsUnavailable": "Could not read ExifTool writable file formats.",
+    "unsupportedWritableFileType": "ExifTool does not report this file type as writable:\n{{path}}"
   },
   "store": {
     "unsupportedCategory": "Unsupported preset category: {{category}}",
@@ -164,6 +166,10 @@
     "errorPreload": "Error:",
     "errorPreloadBody": "EXIFmod must run in the desktop app window (e.g. start with <code>npm run dev</code>), not in a standalone browser tab—the connection to file handling and metadata is unavailable. If you already launch Electron and still see this, run <code>npx electron-vite build</code> once so <code>out/preload/index.mjs</code> is built.",
     "openFolder": "Open Folder",
+    "fileTypeSelectorLabel": "Select file types to show",
+    "fileTypeSelectorVerified": "Verified",
+    "fileTypeSelectorAllSupported": "All",
+    "showExiftoolWritableFilesHint": "Includes every file extension your installed ExifTool reports as writable.",
     "selectAll": "Select All",
     "deselectAll": "Deselect All",
     "previewAlt": "Preview",

@@ -30,7 +30,7 @@ import {
 } from '@shared/exifLimits.js'
 import { isOllamaTransportFailureError } from '@shared/ollamaNetErrors.js'
 import { OLLAMA_ERROR_ECHO_TEMPLATE, OLLAMA_ERROR_EMPTY_SOFT } from '@shared/ollamaResultCodes.js'
-import type { AiDescribeBusyState, CameraMetadata, ConfigCatalog } from '@shared/types.js'
+import type { AiDescribeBusyState, CameraMetadata, ConfigCatalog, FileListMode } from '@shared/types.js'
 import type { FilmRollLogCreateInput, FilmRollParsedLog, FilmRollPresetCategory } from '@shared/filmRollLog.js'
 import type { PresetInitialDraft } from '@shared/presetDraftFromMetadata.js'
 import {
@@ -180,10 +180,10 @@ function pathKey(p: string): string {
   return p
 }
 
-/** JPEG/TIFF targets where metadata is written in-place (not RAW sidecar). */
+/** JPEG/TIFF/JPEG XL targets where metadata is written in-place (not RAW sidecar). */
 function isRasterWriteInPlacePath(filePath: string): boolean {
   const lower = filePath.toLowerCase()
-  return /\.(jpe?g|tif|tiff)$/.test(lower)
+  return /\.(jpe?g|tif|tiff|jxl)$/.test(lower)
 }
 
 function fileBaseName(p: string): string {
@@ -420,6 +420,7 @@ export function App(): React.ReactElement {
   const [files, setFiles] = useState<string[]>([])
   /** `null` = user has not chosen a folder yet; non-null = folder session (list may be empty). */
   const [openedFolderPath, setOpenedFolderPath] = useState<string | null>(null)
+  const [fileListMode, setFileListMode] = useState<FileListMode>('verified')
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set())
   const [metadataHeadingFit, setMetadataHeadingFit] = useState('')
   const [currentIndex, setCurrentIndex] = useState<number | null>(null)
@@ -835,6 +836,18 @@ export function App(): React.ReactElement {
     })
   }, [])
 
+  const resetFolderSession = useCallback((folderPath: string, list: string[], nextCurrentIndex: number | null) => {
+    setOpenedFolderPath(folderPath)
+    setFiles(list)
+    fileListSelectionFromPointerRef.current = false
+    fileListKeyboardSpaceSelectionRef.current = false
+    setSelectedIndices(new Set())
+    setCurrentIndex(nextCurrentIndex)
+    setMetadataByPath({})
+    setPendingByPath({})
+    setWriteDiffByPath({})
+  }, [])
+
   useEffect(() => {
     const api = window.exifmod
     if (!api) return
@@ -846,28 +859,20 @@ export function App(): React.ReactElement {
 
         if (await api.isFile(p)) {
           openedFolder = parentDir(p)
-          list = await api.listImagesInDir(openedFolder)
+          list = await api.listImagesInDir(openedFolder, { mode: fileListMode })
           const idx = list.findIndex((f) => pathsEqualForList(f, p))
           selectIndex = idx >= 0 ? idx : 0
         } else {
-          list = await api.resolveImageList(p)
+          list = await api.resolveImageList(p, { mode: fileListMode })
           selectIndex = 0
           /** Directory with no images: keep `p` as the session folder (not its parent). */
           openedFolder = list.length > 0 ? parentDir(list[0]!) : p
         }
 
-        setOpenedFolderPath(openedFolder)
-        setFiles(list)
-        fileListSelectionFromPointerRef.current = false
-        fileListKeyboardSpaceSelectionRef.current = false
-        setSelectedIndices(new Set())
-        setCurrentIndex(list.length ? selectIndex : null)
-        setMetadataByPath({})
-        setPendingByPath({})
-        setWriteDiffByPath({})
+        resetFolderSession(openedFolder, list, list.length ? selectIndex : null)
       })()
     })
-  }, [])
+  }, [fileListMode, resetFolderSession])
 
   const filesSessionKey =
     openedFolderPath != null && files.length > 0 ? `${openedFolderPath}\n${files.join('\n')}` : ''
@@ -1482,17 +1487,22 @@ export function App(): React.ReactElement {
     if (!api) return
     const dir = await api.openFolder()
     if (!dir) return
-    const list = await api.listImagesInDir(dir)
-    setOpenedFolderPath(dir)
-    setFiles(list)
-    fileListSelectionFromPointerRef.current = false
-    fileListKeyboardSpaceSelectionRef.current = false
-    setSelectedIndices(new Set())
-    setCurrentIndex(list.length ? 0 : null)
-    setMetadataByPath({})
-    setPendingByPath({})
-    setWriteDiffByPath({})
+    const list = await api.listImagesInDir(dir, { mode: fileListMode })
+    resetFolderSession(dir, list, list.length ? 0 : null)
   }
+
+  const onFileListModeChange = useCallback(
+    (mode: FileListMode) => {
+      setFileListMode(mode)
+      if (openedFolderPath == null) return
+      const api = window.exifmod
+      if (!api) return
+      void api.listImagesInDir(openedFolderPath, { mode }).then((list) => {
+        resetFolderSession(openedFolderPath, list, list.length ? 0 : null)
+      })
+    },
+    [openedFolderPath, resetFolderSession]
+  )
 
   const openFilmRollCreate = useCallback(() => {
     if (!catalog) return
@@ -2525,19 +2535,50 @@ export function App(): React.ReactElement {
             <>
               <div className="file-panel-folder-row">
                 <div className="panel-pane-title-stack">
-                  <span className="panel-pane-title file-panel-folder-name" title={openedFolderPath}>
-                    {truncateMiddle(folderTitle, 36)}
-                  </span>
-                  {metadataFolderReadProgress ? (
-                    <p className="panel-pane-shortcut-hint" aria-live="polite">
-                      {t('ui.readingMetadataProgress', {
-                        current: metadataFolderReadProgress.done,
-                        total: metadataFolderReadProgress.total
-                      })}
-                    </p>
-                  ) : (
-                    <p className="panel-pane-shortcut-hint">{fileListShortcutHint}</p>
-                  )}
+                  <div className="file-panel-title-row">
+                    <span className="panel-pane-title file-panel-folder-name" title={openedFolderPath}>
+                      {truncateMiddle(folderTitle, 36)}
+                    </span>
+                    <div
+                      className="file-panel-format-toggle"
+                      role="radiogroup"
+                      aria-label={t('ui.fileTypeSelectorLabel')}
+                      title={t('ui.showExiftoolWritableFilesHint')}
+                    >
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        role="radio"
+                        aria-checked={fileListMode === 'verified'}
+                        className={`file-panel-format-option ${fileListMode === 'verified' ? 'selected' : ''}`}
+                        onClick={() => onFileListModeChange('verified')}
+                      >
+                        {t('ui.fileTypeSelectorVerified')}
+                      </button>
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        role="radio"
+                        aria-checked={fileListMode === 'exiftoolWritable'}
+                        className={`file-panel-format-option ${fileListMode === 'exiftoolWritable' ? 'selected' : ''}`}
+                        onClick={() => onFileListModeChange('exiftoolWritable')}
+                      >
+                        {t('ui.fileTypeSelectorAllSupported')}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="file-panel-header-meta">
+                    {metadataFolderReadProgress ? (
+                      <p className="panel-pane-shortcut-hint" aria-live="polite">
+                        {t('ui.readingMetadataProgress', {
+                          current: metadataFolderReadProgress.done,
+                          total: metadataFolderReadProgress.total
+                        })}
+                      </p>
+                    ) : (
+                      <p className="panel-pane-shortcut-hint">{fileListShortcutHint}</p>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"

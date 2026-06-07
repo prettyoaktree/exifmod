@@ -8,7 +8,7 @@ import { localizeSkipReason, localizeMergeErrorMessage, localizeExportErrorMessa
 import { localizeThrownPresetError } from './localizeStoreError.js'
 import { resolveLocaleTag } from '../shared/i18n/resolveLocale.js'
 import { dirname, join, resolve as resolvePath } from 'node:path'
-import type { MergeImportResult } from '../shared/types.js'
+import type { FileListMode, MergeImportResult } from '../shared/types.js'
 import { fileURLToPath } from 'node:url'
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { resetUserDataIfRequestedFromArgv } from './resetUserDataFromArgv.js'
@@ -36,7 +36,14 @@ import {
   setSqlWasmPath,
   isSupportedImagePath
 } from './exifCore/index.js'
-import { readExifMetadataMerged, readExifMetadataBatchMerged, spawnExiftool } from './exiftoolRunner.js'
+import {
+  isExiftoolWritablePath,
+  isPathExtensionInSet,
+  listExiftoolWritableExtensions,
+  readExifMetadataMerged,
+  readExifMetadataBatchMerged,
+  spawnExiftool
+} from './exiftoolRunner.js'
 import { SUPPORTED_IMAGE_DIALOG_EXTENSIONS } from './exifCore/constants.js'
 import {
   getPreWriteBackupChoice,
@@ -416,6 +423,40 @@ function rememberLastImageFolder(dirPath: string): void {
   } catch {
     /* ignore */
   }
+}
+
+function normalizeFileListMode(options?: { mode?: FileListMode }): FileListMode {
+  return options?.mode === 'exiftoolWritable' ? 'exiftoolWritable' : 'verified'
+}
+
+function writableExtensionsForListMode(mode: FileListMode): ReadonlySet<string> | null {
+  if (mode === 'verified') return null
+  const tool = resolveExiftoolPath()
+  if (!tool) return null
+  try {
+    return listExiftoolWritableExtensions(tool)
+  } catch {
+    return null
+  }
+}
+
+function isPathIncludedInFileList(
+  filePath: string,
+  mode: FileListMode,
+  exiftoolWritableExtensions: ReadonlySet<string> | null
+): boolean {
+  if (mode === 'verified') return isSupportedImagePath(filePath)
+  return exiftoolWritableExtensions != null && isPathExtensionInSet(filePath, exiftoolWritableExtensions)
+}
+
+function assertExifWritableTarget(exiftoolPath: string, filePath: string): void {
+  if (isSupportedImagePath(filePath)) return
+  try {
+    if (isExiftoolWritablePath(exiftoolPath, filePath)) return
+  } catch {
+    throw new Error(i18next.t('ipc.exiftoolWritableFormatsUnavailable'))
+  }
+  throw new Error(i18next.t('ipc.unsupportedWritableFileType', { path: filePath }))
 }
 
 function createWindow(): void {
@@ -824,6 +865,7 @@ function setupIpc(): void {
     async (_e, filePath: string, payload: Record<string, unknown>, opts?: { backupFirst?: boolean }) => {
       const tool = resolveExiftoolPath()
       if (!tool) throw new Error(i18next.t('ipc.exiftoolNotFound'))
+      assertExifWritableTarget(tool, filePath)
       if (opts?.backupFirst && isRasterInFileWritePath(filePath)) {
         const b = createPreWriteBackupCopy(filePath)
         if (!b.ok) throw new Error(b.error)
@@ -851,6 +893,7 @@ function setupIpc(): void {
       let done = 0
       for (const it of items) {
         try {
+          assertExifWritableTarget(tool, it.path)
           const isRaw = isRawImagePath(it.path)
           if (it.backupFirst && isRasterInFileWritePath(it.path)) {
             const b = createPreWriteBackupCopy(it.path)
@@ -958,7 +1001,9 @@ function setupIpc(): void {
     }
   })
 
-  ipcMain.handle('fs:resolveImageList', (_e, targetPath: string) => {
+  ipcMain.handle('fs:resolveImageList', (_e, targetPath: string, options?: { mode?: FileListMode }) => {
+    const mode = normalizeFileListMode(options)
+    const writableExtensions = writableExtensionsForListMode(mode)
     try {
       const st = statSync(targetPath)
       if (st.isDirectory()) {
@@ -966,28 +1011,30 @@ function setupIpc(): void {
         for (const n of readdirSync(targetPath).sort(compareNaturalPathBaseName)) {
           const full = join(targetPath, n)
           try {
-            if (statSync(full).isFile() && isSupportedImagePath(full)) out.push(full)
+            if (statSync(full).isFile() && isPathIncludedInFileList(full, mode, writableExtensions)) out.push(full)
           } catch {
             /* */
           }
         }
         return out
       }
-      if (st.isFile() && isSupportedImagePath(targetPath)) return [targetPath]
+      if (st.isFile() && isPathIncludedInFileList(targetPath, mode, writableExtensions)) return [targetPath]
     } catch {
       /* */
     }
     return [] as string[]
   })
 
-  ipcMain.handle('fs:listImagesInDir', (_e, dirPath: string) => {
+  ipcMain.handle('fs:listImagesInDir', (_e, dirPath: string, options?: { mode?: FileListMode }) => {
+    const mode = normalizeFileListMode(options)
+    const writableExtensions = writableExtensionsForListMode(mode)
     const out: string[] = []
     try {
       const names = readdirSync(dirPath)
       for (const n of names.sort(compareNaturalPathBaseName)) {
         const full = join(dirPath, n)
         try {
-          if (statSync(full).isFile() && isSupportedImagePath(full)) out.push(full)
+          if (statSync(full).isFile() && isPathIncludedInFileList(full, mode, writableExtensions)) out.push(full)
         } catch {
           /* */
         }

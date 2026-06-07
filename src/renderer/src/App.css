@@ -249,11 +249,70 @@ button.btn-primary.file-panel-open-folder:hover {
   color: var(--file-action-accent);
 }
 
-.file-panel-folder-name {
+.file-panel-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.panel-pane-title-stack .file-panel-folder-name {
   display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  width: auto;
+  max-width: min(36ch, 100%);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.file-panel-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+
+.file-panel-header-meta .panel-pane-shortcut-hint {
+  margin: 0;
+}
+
+.file-panel-format-toggle {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.file-panel-format-option {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: 0.18rem 0.45rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.file-panel-format-option:hover {
+  color: var(--text);
+}
+
+.file-panel-format-option.selected {
+  background: var(--file-action-accent);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.16);
 }
 
 .file-panel-actions {

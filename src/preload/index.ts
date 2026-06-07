@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { ConfigCatalog, CreatePresetInput, PresetRecord, UpdatePresetInput } from '../shared/types.js'
+import type { ConfigCatalog, CreatePresetInput, FileListMode, PresetRecord, UpdatePresetInput } from '../shared/types.js'
 import type { LrPluginInstallResult } from '../shared/lrPluginInstallResult.js'
 import type { UpdaterUiPayload } from '../shared/updaterUi.js'
 import type { FilmRollLogCreateInput, FilmRollParsedLog } from '../shared/filmRollLog.js'
@@ -63,10 +63,10 @@ const api = {
   unusedLensMounts: () => ipcRenderer.invoke('presets:unusedLensMounts') as Promise<string[]>,
   clearUnusedLensMount: (mount: string) =>
     ipcRenderer.invoke('presets:clearUnusedLensMount', mount) as Promise<{ cleared: number }>,
-  resolveImageList: (targetPath: string) =>
-    ipcRenderer.invoke('fs:resolveImageList', targetPath) as Promise<string[]>,
-  listImagesInDir: (dirPath: string) =>
-    ipcRenderer.invoke('fs:listImagesInDir', dirPath) as Promise<string[]>,
+  resolveImageList: (targetPath: string, opts?: { mode?: FileListMode }) =>
+    ipcRenderer.invoke('fs:resolveImageList', targetPath, opts) as Promise<string[]>,
+  listImagesInDir: (dirPath: string, opts?: { mode?: FileListMode }) =>
+    ipcRenderer.invoke('fs:listImagesInDir', dirPath, opts) as Promise<string[]>,
   isFile: (filePath: string) => ipcRenderer.invoke('fs:isFile', filePath) as Promise<boolean>,
   readImageDataUrl: (filePath: string) => ipcRenderer.invoke('fs:readImageDataUrl', filePath) as Promise<string>,
   createFilmRollLog: (input: FilmRollLogCreateInput) =>
